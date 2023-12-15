@@ -1,13 +1,72 @@
 (ns leiningen.balloon
   (:require [clojure.tools.cli :refer [parse-opts]]
+            [clojure.string :as string]
             [balloon.core :as b]))
 
-(defn balloon
-  "Pass in your hash-map."
+;; Following example from https://github.com/clojure/tools.cli
+
+(def cli-options
+  [;; First three strings describe a short-option, long-option with optional
+   ;; example argument description, and a description. All three are optional
+   ;; and positional.
+   ["-t" "--input-type" "Input format in edn or json"
+    :default "edn"
+    :validate [#(or (= "edn" %)
+                    (= "json" %)) "Must be edn or json"]]
+   ["-h" "--help"]])
+
+(defn usage [options-summary]
+  (->> [""
+        "Usage: command [argument] [options]"
+        ""
+        "Commands:"
+        "  deflate  Flat a nested hash-map"
+        "  inflate  Unflat hash-map into a nested one"
+        ""
+        "Options:"
+        options-summary
+        ""
+        "Examples: lein balloon inflate \"{:a.b \\\"c\\\"}\""
+        "          lein balloon deflate \"{:a {:b \\\"c\\\"}}\" :delimiter \"*\""
+        ""]
+       (string/join \newline)))
+
+(defn error-msg [errors]
+  (str "The following errors occurred while parsing your command:\n\n"
+       (string/join \newline errors)))
+
+(defn validate-args
+  "Validate command line arguments. Either return a map indicating
+  balloon should exit (with an error message, and optional ok status),
+  or a map indicating the command balloon should take and the value
+  with options provided."
+  [args]
+  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
+    (cond
+      (:help options)             ; help => exit OK with usage summary
+      {:exit-message (usage summary) :ok? true}
+      errors               ; errors => exit with description of errors
+      {:exit-message (error-msg errors)}
+      ;; custom validation on arguments
+      (and (<= 2 (count arguments))
+           (#{"deflate" "inflate"} (first arguments)))
+      {:command (first arguments)
+       :arguments (rest arguments)
+       :options options}
+      :else      ; failed custom validation => exit with usage summary
+      {:exit-message (usage summary)})))
+
+(defn exit [status msg]
+  (println msg)
+  (System/exit status))
+
+(defn ^:pass-through-help balloon
+  "Use \"help\" for more info"
   [project & args]
-  (let [{:keys [arguments] :as result} (parse-opts args [])
-        command                        (first arguments)
-        value                          (second arguments)]
-    (if (= "inflate" command)
-      (println (b/inflate (read-string value)))
-      (println (b/deflate (read-string value))))))
+  (let [{:keys [command arguments options exit-message ok?]} (validate-args args)]
+    (if exit-message
+      (exit (if ok? 0 1) exit-message)
+      (let [parsed-args (map read-string arguments)]
+        (if (= "inflate" command)
+          (leiningen.core.main/info (apply b/inflate parsed-args))
+          (leiningen.core.main/info (apply b/deflate parsed-args)))))))
