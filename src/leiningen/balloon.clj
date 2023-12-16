@@ -1,6 +1,8 @@
 (ns leiningen.balloon
   (:require [clojure.tools.cli :refer [parse-opts]]
             [clojure.string :as string]
+            [clojure.edn :as edn]
+            [cheshire.core :as json]
             [balloon.core :as b]))
 
 ;; Following example from https://github.com/clojure/tools.cli
@@ -9,7 +11,7 @@
   [;; First three strings describe a short-option, long-option with optional
    ;; example argument description, and a description. All three are optional
    ;; and positional.
-   ["-t" "--input-type" "Input format in edn or json"
+   ["-t" "--input-type FORMAT" "Input format in edn or json"
     :default "edn"
     :validate [#(or (= "edn" %)
                     (= "json" %)) "Must be edn or json"]]
@@ -60,13 +62,35 @@
   (println msg)
   (System/exit status))
 
+(defn parse-delimiter-args
+  "Do not parse value for the :delimiter option"
+  [args]
+  (reverse (:args
+            (reduce
+             (fn [acc v]
+               (if (= v ":delimiter")
+                 (-> acc
+                     (assoc :prev-delim true)
+                     (update :args conj :delimiter))
+                 (if (:prev-delim acc)
+                   (-> acc
+                       (assoc :prev-delim false)
+                       (update :args conj v))
+                   (update acc :args conj (edn/read-string v)))))
+             {:prev-delim false
+              :args '()}
+             args))))
+
 (defn ^:pass-through-help balloon
   "Use \"help\" for more info"
   [project & args]
   (let [{:keys [command arguments options exit-message ok?]} (validate-args args)]
     (if exit-message
       (exit (if ok? 0 1) exit-message)
-      (let [parsed-args (map read-string arguments)]
+      (let [parsed-args (if (= "json" (:input-type options))
+                          (conj (parse-delimiter-args (rest arguments))
+                                (json/parse-string (first arguments) true))
+                          (parse-delimiter-args arguments))]
         (if (= "inflate" command)
           (leiningen.core.main/info (apply b/inflate parsed-args))
           (leiningen.core.main/info (apply b/deflate parsed-args)))))))
