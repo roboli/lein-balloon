@@ -15,6 +15,10 @@
     :default "edn"
     :validate [#(or (= "edn" %)
                     (= "json" %)) "Must be edn or json"]]
+   ["-T" "--output-type FORMAT" "Output format in edn or json"
+    :default "edn"
+    :validate [#(or (= "edn" %)
+                    (= "json" %)) "Must be edn or json"]]
    ["-h" "--help"]])
 
 (defn usage [options-summary]
@@ -90,7 +94,10 @@
       (let [parsed-args (if (= "json" (:input-type options))
                           (conj (parse-delimiter-args (rest arguments))
                                 (json/parse-string (first arguments) true))
-                          (parse-delimiter-args arguments))]
-        (if (= "inflate" command)
-          (leiningen.core.main/info (apply b/inflate parsed-args))
-          (leiningen.core.main/info (apply b/deflate parsed-args)))))))
+                          (parse-delimiter-args arguments))
+            result      (if (= "inflate" command)
+                          (apply b/inflate parsed-args)
+                          (apply b/deflate parsed-args))]
+        (if (= "json" (:output-type options))
+          (leiningen.core.main/info (json/generate-string result))
+          (leiningen.core.main/info result))))))
