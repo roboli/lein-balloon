@@ -42,7 +42,7 @@
       (let [value  {:a "b"}
             result (lb/balloon nil "deflate" (str value) "-T" "json")]
         (is (= result (list jgsc (list dc value)))))))
-  
+
   (testing "Calling deflate command with delimiter and json format input/output"
     (with-redefs [b/deflate                mock-deflate
                   json/parse-string        mock-json-parse-string
