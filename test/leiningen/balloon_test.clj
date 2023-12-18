@@ -5,10 +5,12 @@
             [leiningen.balloon :as lb]))
 
 (def dc "deflate-called")
+(def ic "inflate-called")
 (def jpsc "json/parse-string-called")
 (def jgsc "json/generate-string-called")
 
 (defn mock-deflate [& args] (conj args dc))
+(defn mock-inflate [& args] (conj args ic))
 (defn mock-json-parse-string [& args] (conj args jpsc))
 (defn mock-json-generate-string [& args] (conj args jgsc))
 
@@ -52,5 +54,48 @@
             result (lb/balloon nil "deflate" value ":delimiter" "*" "-t" "json" "-T" "json")]
         (is (= result (list jgsc
                             (list dc
+                                  (list jpsc value true)
+                                  :delimiter "*"))))))))
+
+(deftest inflate
+  (testing "Calling inflate command"
+    (with-redefs [b/inflate                mock-inflate
+                  leiningen.core.main/info identity]
+      (let [value  {:a.b "c"}
+            result (lb/balloon nil "inflate" (str value))]
+        (is (= result (list ic value))))))
+
+  (testing "Calling inflate command with delimiter"
+    (with-redefs [b/inflate                mock-inflate
+                  leiningen.core.main/info identity]
+      (let [value  {:a*c "c"}
+            result (lb/balloon nil "inflate" (str value) ":delimiter" "*")]
+        (is (= result (list ic value :delimiter "*"))))))
+
+  (testing "Calling inflate command with json format input"
+    (with-redefs [b/inflate                mock-inflate
+                  json/parse-string        mock-json-parse-string
+                  leiningen.core.main/info identity]
+      (let [value  "{\"a.b\": \"c\"}"
+            result (lb/balloon nil "inflate" value "-t" "json")]
+        (is (= result (list ic (list jpsc value true)))))))
+
+  (testing "Calling inflate command with json format output"
+    (with-redefs [b/inflate                mock-inflate
+                  json/generate-string     mock-json-generate-string
+                  leiningen.core.main/info identity]
+      (let [value  {:a.b "c"}
+            result (lb/balloon nil "inflate" (str value) "-T" "json")]
+        (is (= result (list jgsc (list ic value)))))))
+
+  (testing "Calling inflate command with delimiter and json format input/output"
+    (with-redefs [b/inflate                mock-inflate
+                  json/parse-string        mock-json-parse-string
+                  json/generate-string     mock-json-generate-string
+                  leiningen.core.main/info identity]
+      (let [value  "{\"a.b\": \"c\"}"
+            result (lb/balloon nil "inflate" value ":delimiter" "*" "-t" "json" "-T" "json")]
+        (is (= result (list jgsc
+                            (list ic
                                   (list jpsc value true)
                                   :delimiter "*"))))))))
