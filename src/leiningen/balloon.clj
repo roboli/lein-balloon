@@ -19,6 +19,7 @@
     :default "edn"
     :validate [#(or (= "edn" %)
                     (= "json" %)) "Must be edn or json"]]
+   ["-f" "--file NAME" "File with value to read"]
    ["-h" "--help"]])
 
 (defn usage [options-summary]
@@ -54,7 +55,9 @@
       errors               ; errors => exit with description of errors
       {:exit-message (error-msg errors)}
       ;; custom validation on arguments
-      (and (<= 2 (count arguments))
+      (and (or (<= 2 (count arguments))
+               (and (<= 1 (count arguments))
+                    (:file options)))
            (#{"deflate" "inflate"} (first arguments)))
       {:command (first arguments)
        :arguments (rest arguments)
@@ -91,10 +94,13 @@
   (let [{:keys [command arguments options exit-message ok?]} (validate-args args)]
     (if exit-message
       (exit (if ok? 0 1) exit-message)
-      (let [parsed-args (if (= "json" (:input-type options))
-                          (conj (parse-delimiter-args (rest arguments))
-                                (json/parse-string (first arguments) true))
-                          (parse-delimiter-args arguments))
+      (let [input-args  (if (:file options)
+                          (conj arguments (slurp (:file options)))
+                          arguments)
+            parsed-args (if (= "json" (:input-type options))
+                          (conj (parse-delimiter-args (rest input-args))
+                                (json/parse-string (first input-args) true))
+                          (parse-delimiter-args input-args))
             result      (if (= "inflate" command)
                           (apply b/inflate parsed-args)
                           (apply b/deflate parsed-args))]
