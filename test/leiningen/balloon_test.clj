@@ -108,8 +108,7 @@
             result (lb/balloon nil "deflate" (str value) ":delimiter" "&" "-C" "true" "-T" "json")]
         (is (= result (list (str (list jgsc
                                        (list dc value :delimiter "&")))
-                            "wait enter"))))))
-  )
+                            "wait enter")))))))
 
 (deftest inflate
   (testing "Calling inflate command"
@@ -173,4 +172,32 @@
         (is (= result (list jgsc
                             (list ic
                                   (list jpsc (str {:a filename}) true)
-                                  :delimiter "_"))))))))
+                                  :delimiter "_")))))))
+
+  (testing "Calling inflate command using clipboard input"
+    (with-redefs [b/inflate                mock-inflate
+                  cb/paste                 mock-paste
+                  leiningen.core.main/info identity]
+      (let [result (lb/balloon nil "inflate" "-c" "true")]
+        (is (= result (list ic {:a "clipboard"}))))))
+
+  (testing "Calling inflate command using clipboard output"
+    (with-redefs [b/inflate                mock-inflate
+                  read-line                mock-read-line
+                  leiningen.core.main/info identity]
+      (let [value  {:a "b"}
+            result (lb/balloon nil "inflate" (str value) "-C" "true")]
+        (is (= result (list
+                       (str (list ic value))
+                       "wait enter"))))))
+
+  (testing "Calling inflate command using clipboard with delimiter and json format output"
+    (with-redefs [b/inflate                mock-inflate
+                  json/generate-string     mock-json-generate-string
+                  read-line                mock-read-line
+                  leiningen.core.main/info identity]
+      (let [value  {:a "b"}
+            result (lb/balloon nil "inflate" (str value) ":delimiter" "&" "-C" "true" "-T" "json")]
+        (is (= result (list (str (list jgsc
+                                       (list ic value :delimiter "&")))
+                            "wait enter")))))))
