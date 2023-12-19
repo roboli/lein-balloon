@@ -1,6 +1,7 @@
 (ns leiningen.balloon-test
   (:require [clojure.test :refer :all]
             [cheshire.core :as json]
+            [clipboard :as cb]
             [balloon.core :as b]
             [leiningen.balloon :as lb]))
 
@@ -14,6 +15,8 @@
 (defn mock-json-parse-string [& args] (conj args jpsc))
 (defn mock-json-generate-string [& args] (conj args jgsc))
 (defn mock-slurp [v] (str {:a v}))
+(defn mock-paste [] (str {:a "clipboard"}))
+(defn mock-read-line [] (list (cb/paste) "wait enter"))
 
 (deftest deflate
   (testing "Calling deflate command"
@@ -77,7 +80,36 @@
         (is (= result (list jgsc
                             (list dc
                                   (list jpsc (str {:a filename}) true)
-                                  :delimiter "_"))))))))
+                                  :delimiter "_")))))))
+
+  (testing "Calling deflate command using clipboard input"
+    (with-redefs [b/deflate                mock-deflate
+                  cb/paste                 mock-paste
+                  leiningen.core.main/info identity]
+      (let [result (lb/balloon nil "deflate" "-c" "true")]
+        (is (= result (list dc {:a "clipboard"}))))))
+
+  (testing "Calling deflate command using clipboard output"
+    (with-redefs [b/deflate                mock-deflate
+                  read-line                mock-read-line
+                  leiningen.core.main/info identity]
+      (let [value  {:a "b"}
+            result (lb/balloon nil "deflate" (str value) "-C" "true")]
+        (is (= result (list
+                       (str (list dc value))
+                       "wait enter"))))))
+
+  (testing "Calling deflate command using clipboard with delimiter and json format output"
+    (with-redefs [b/deflate                mock-deflate
+                  json/generate-string     mock-json-generate-string
+                  read-line                mock-read-line
+                  leiningen.core.main/info identity]
+      (let [value  {:a "b"}
+            result (lb/balloon nil "deflate" (str value) ":delimiter" "&" "-C" "true" "-T" "json")]
+        (is (= result (list (str (list jgsc
+                                       (list dc value :delimiter "&")))
+                            "wait enter"))))))
+  )
 
 (deftest inflate
   (testing "Calling inflate command"
