@@ -13,6 +13,7 @@
 (defn mock-inflate [& args] (conj args ic))
 (defn mock-json-parse-string [& args] (conj args jpsc))
 (defn mock-json-generate-string [& args] (conj args jgsc))
+(defn mock-slurp [v] (str {:a v}))
 
 (deftest deflate
   (testing "Calling deflate command"
@@ -55,7 +56,28 @@
         (is (= result (list jgsc
                             (list dc
                                   (list jpsc value true)
-                                  :delimiter "*"))))))))
+                                  :delimiter "*")))))))
+
+  (testing "Calling deflate command using file"
+    (with-redefs [b/deflate                mock-deflate
+                  slurp                    mock-slurp
+                  leiningen.core.main/info identity]
+      (let [filename "file.edn"
+            result   (lb/balloon nil "deflate" "-f" filename)]
+        (is (= result (list dc {:a filename}))))))
+
+  (testing "Calling deflate command using file with delimiter and json format input/output"
+    (with-redefs [b/deflate                mock-deflate
+                  slurp                    mock-slurp
+                  json/parse-string        mock-json-parse-string
+                  json/generate-string     mock-json-generate-string
+                  leiningen.core.main/info identity]
+      (let [filename  "file.json"
+            result (lb/balloon nil "deflate" ":delimiter" "_" "-f" filename "-t" "json" "-T" "json")]
+        (is (= result (list jgsc
+                            (list dc
+                                  (list jpsc (str {:a filename}) true)
+                                  :delimiter "_"))))))))
 
 (deftest inflate
   (testing "Calling inflate command"
@@ -98,4 +120,25 @@
         (is (= result (list jgsc
                             (list ic
                                   (list jpsc value true)
-                                  :delimiter "*"))))))))
+                                  :delimiter "*")))))))
+
+  (testing "Calling inflate command using file"
+    (with-redefs [b/inflate                mock-inflate
+                  slurp                    mock-slurp
+                  leiningen.core.main/info identity]
+      (let [filename "file.edn"
+            result   (lb/balloon nil "inflate" "-f" filename)]
+        (is (= result (list ic {:a filename}))))))
+
+  (testing "Calling inflate command using file with delimiter and json format input/output"
+    (with-redefs [b/inflate                mock-inflate
+                  slurp                    mock-slurp
+                  json/parse-string        mock-json-parse-string
+                  json/generate-string     mock-json-generate-string
+                  leiningen.core.main/info identity]
+      (let [filename  "file.json"
+            result (lb/balloon nil "inflate" ":delimiter" "_" "-f" filename "-t" "json" "-T" "json")]
+        (is (= result (list jgsc
+                            (list ic
+                                  (list jpsc (str {:a filename}) true)
+                                  :delimiter "_"))))))))
