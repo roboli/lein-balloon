@@ -3,6 +3,7 @@
             [clojure.string :as string]
             [clojure.edn :as edn]
             [cheshire.core :as json]
+            [clipboard :as cb]
             [balloon.core :as b]))
 
 ;; Following example from https://github.com/clojure/tools.cli
@@ -20,6 +21,10 @@
     :validate [#(or (= "edn" %)
                     (= "json" %)) "Must be edn or json"]]
    ["-f" "--file NAME" "File with value to read"]
+   ["-c" "--input-clipboard BOOLEAN" "Use value from clipboard"
+    :validate [#(= "true" %) "Must be true"]]
+   ["-C" "--output-clipboard BOOLEAN" "Use value from clipboard"
+    :validate [#(= "true" %) "Must be true"]]
    ["-h" "--help"]])
 
 (defn usage [options-summary]
@@ -57,7 +62,9 @@
       ;; custom validation on arguments
       (and (or (<= 2 (count arguments))
                (and (<= 1 (count arguments))
-                    (:file options)))
+                    (:file options))
+               (and (<= 1 (count arguments))
+                    (:input-clipboard options)))
            (#{"deflate" "inflate"} (first arguments)))
       {:command (first arguments)
        :arguments (rest arguments)
@@ -94,9 +101,13 @@
   (let [{:keys [command arguments options exit-message ok?]} (validate-args args)]
     (if exit-message
       (exit (if ok? 0 1) exit-message)
-      (let [input-args  (if (:file options)
-                          (conj arguments (slurp (:file options)))
-                          arguments)
+      (let [input-args  (cond (:file options)
+                              (conj arguments (slurp (:file options)))
+
+                              (:input-clipboard options)
+                              (conj arguments (cb/paste))
+
+                              :else arguments)
             parsed-args (if (= "json" (:input-type options))
                           (conj (parse-delimiter-args (rest input-args))
                                 (json/parse-string (first input-args) true))
@@ -104,6 +115,14 @@
             result      (if (= "inflate" command)
                           (apply b/inflate parsed-args)
                           (apply b/deflate parsed-args))]
-        (if (= "json" (:output-type options))
-          (leiningen.core.main/info (json/generate-string result))
-          (leiningen.core.main/info result))))))
+        (let [output (if (= "json" (:output-type options))
+                       (json/generate-string result)
+                       result)]
+          (if (:output-clipboard options)
+            (do
+              (cb/copy output)
+              ;; Keep process running to allow value go into clipboard
+              ;; More here https://stackoverflow.com/a/14447799/2202143
+              (leiningen.core.main/info "Go paste your stuff and press enter when done!")
+              (read-line))
+            (leiningen.core.main/info output)))))))
