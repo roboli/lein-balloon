@@ -127,4 +127,4 @@
               ;; More here https://stackoverflow.com/a/14447799/2202143
               (leiningen.core.main/info "Go paste your stuff and press enter when done!")
               (read-line))
-            (leiningen.core.main/info output)))))))
+            (leiningen.core.main/info (str output))))))))
