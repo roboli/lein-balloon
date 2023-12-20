@@ -2,6 +2,8 @@
 
 A Leiningen plugin to run the [balloon](https://github.com/roboli/balloon) library as a CLI.
 
+![Peek 2023-12-20 16-52](https://github.com/roboli/lein-balloon/assets/6392110/328ac992-a17f-40a0-85f7-bece8d2b9a9e)
+
 ## Quickstart
 
 For installation, add it as a plugin to your `project.clj` file or your global profile:
