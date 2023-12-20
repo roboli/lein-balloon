@@ -38,8 +38,8 @@
         "Options:"
         options-summary
         ""
-        "Examples: lein balloon inflate \"{:a.b \\\"c\\\"}\""
-        "          lein balloon deflate \"{:a {:b \\\"c\\\"}}\" :delimiter \"*\""
+        "Examples: lein balloon inflate '{:a.b \"c\"}'"
+        "          lein balloon deflate '{:a {:b \"c\"}}' :delimiter '*'"
         ""]
        (string/join \newline)))
 

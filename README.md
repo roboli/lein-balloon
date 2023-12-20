@@ -50,8 +50,8 @@ Options:
   -C, --output-clipboard BOOLEAN       Use value from clipboard
   -h, --help
 
-Examples: lein balloon inflate "{:a.b \"c\"}"
-          lein balloon deflate "{:a {:b \"c\"}}" :delimiter "*"
+Examples: lein balloon inflate '{:a.b "c"}'
+          lein balloon deflate '{:a {:b "c"}}' :delimiter '*'
 ```
 
 ### Examples
