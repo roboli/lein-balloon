@@ -34,7 +34,7 @@ Print help:
 $ lein balloon -h
 
 ;;=>
-Usage: command [argument] [options]
+Usage: command [arguments] [options]
 
 Commands:
   deflate  Flat a nested hash-map

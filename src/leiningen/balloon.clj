@@ -29,7 +29,7 @@
 
 (defn usage [options-summary]
   (->> [""
-        "Usage: command [argument] [options]"
+        "Usage: command [arguments] [options]"
         ""
         "Commands:"
         "  deflate  Flat a nested hash-map"
