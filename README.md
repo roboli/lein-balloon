@@ -15,7 +15,7 @@ Run deflate to flat a nested hash-ma:
 ```
 $ lein balloon deflate '{:a {:b "c"}}' :delimiter '*'
 
-;;=> {:a*b c}
+;;=> {:a*b "c"}
 ```
 
 Run inflate to convert a deflated (flatten) hash-map into a json nested object:
@@ -52,7 +52,21 @@ Examples: lein balloon inflate "{:a.b \"c\"}"
           lein balloon deflate "{:a {:b \"c\"}}" :delimiter "*"
 ```
 
+### Inflate
+
 Examples:
+
+Inflate a flat json:
+
+```
+$ lein balloon inflate '{"a.b": "c"}' -t json
+```
+
+Inflate json to json:
+
+```
+$ lein balloon inflate '{"a.b": "c"}' -t json -T json
+```
 
 ## License
 
