@@ -66,7 +66,7 @@ Inflate json to json:
 $ lein balloon inflate '{"a.b": "c"}' -t json -T json
 ```
 
-Deflate json in file using a delimiter:
+Deflate json in file to json using a delimiter:
 
 ```
 $ lein balloon deflate :delimiter '_' -f my_file.json -t json -T json
