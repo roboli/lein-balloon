@@ -95,7 +95,9 @@
               :args '()}
              args))))
 
-(defn ^:pass-through-help balloon
+(defn ^{:pass-through-help true
+        :no-project-needed true}
+  balloon
   "Use \"help\" for more info"
   [project & args]
   (let [{:keys [command arguments options exit-message ok?]} (validate-args args)]
