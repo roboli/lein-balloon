@@ -10,7 +10,7 @@ For installation, add it as a plugin to your `project.clj` file or your global p
 :plugins [[org.clojars.roboli/lein-balloon "0.1.0-SNAPSHOT"]]
 ```
 
-Run deflate to flat a nested hash-ma:
+Run deflate to flat a nested map:
 
 ```
 $ lein balloon deflate '{:a {:b "c"}}' :delimiter '*'
@@ -18,7 +18,7 @@ $ lein balloon deflate '{:a {:b "c"}}' :delimiter '*'
 ;;=> {:a*b "c"}
 ```
 
-Run inflate to convert a deflated (flatten) hash-map into a json nested object:
+Run inflate to convert a deflated (flatten) map into a json nested object:
 
 ```
 $ lein balloon inflate '{:a*b "c"}' :delimiter '*' -T json
@@ -52,11 +52,9 @@ Examples: lein balloon inflate "{:a.b \"c\"}"
           lein balloon deflate "{:a {:b \"c\"}}" :delimiter "*"
 ```
 
-### Inflate
+### Examples
 
-Examples:
-
-Inflate a flat json:
+Inflate a flat json to edn:
 
 ```
 $ lein balloon inflate '{"a.b": "c"}' -t json
@@ -66,6 +64,18 @@ Inflate json to json:
 
 ```
 $ lein balloon inflate '{"a.b": "c"}' -t json -T json
+```
+
+Deflate json in file using a delimiter:
+
+```
+$ lein balloon deflate :delimiter '_' -f my_file.json -t json -T json
+```
+
+Deflate map from clipboard and put result in clipboard:
+
+```
+$ lein balloon deflate -c true -C true
 ```
 
 ## License
