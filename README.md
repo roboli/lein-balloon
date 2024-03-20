@@ -9,7 +9,7 @@ A Leiningen plugin to run the [balloon](https://github.com/roboli/balloon) libra
 For installation, add it as a plugin to your `project.clj` file or your global profile:
 
 ```
-:plugins [[org.clojars.roboli/lein-balloon "0.1.1"]]
+:plugins [[org.clojars.roboli/lein-balloon "0.1.2"]]
 ```
 
 Run deflate to flat a nested map:
